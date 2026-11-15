@@ -15,36 +15,49 @@ typedef struct Compression_Data
 	long long number_of_inceptions;
 }compression_data;
 
-
 int *compress_and_store(int *array, compression_data *c_data)
 {
+	c_data->offset = c_data->offset +1;
 	if(fseek(c_data->fd, c_data->offset, SEEK_SET) != 0)
 	{
 		printf("fseek failed\n");
-		fclose(fd);
+		fclose(c_data->fd);
 		return NULL;
 	}
-	char buffer[9] = {0};
-	fread(buffer, 1, 8, c_data->fd);
-	printf("%s\n", buffer);
-	c_data->offset = c_data->offset +8;
-	compress_and_store(array, c_data);
+	int c = fgetc(c_data->fd);
+	convert_integer_to_binary(array, c, -1, 32);
+	for(int i = 31; i >= 0; i--)
+	{
+		printf("%d ", array[i]);
+	}
+	printf("\n");
+	if(c_data->inception_number == c_data->number_of_inceptions)
+	{
+		return array;
+	}
 }
 
-void Compress_And_Store(FILE *fd, long long file_size)
+int *Compress_And_Store(FILE *fd, long long file_size)
 {
-	printf("%lld\n", file_size);
-	int number_of_inceptions = file_size/((2147483648)/(256));
+	compression_data *c_data = initialize_data_structure(fd, file_size);
+	int *array = (int *)malloc(32*sizeof(int));
+	long long *c = (int *)malloc(sizeof(long long))
+	*c =  2147483647;
+	convert_integer_to_binary(array, *c, -1, 32);
+	int *array = compress_and_store(array, c_data);
+}
+
+compression_data *initialize_data_structure(FILE *fd, long long file_size)
+{
 	int i = 0;
 	int inception_number = 0;
-	printf("%d\n", number_of_inceptions);
 	int *array = (int *)malloc(32*sizeof(int));
-	compression_data *c_data = (compression_data *)malloc(struct Compression_Data);
+	compression_data *c_data = (compression_data *)malloc(sizeof(struct Compression_Data));
 	c_data->fd = fd;
 	c_data->offset = 0;
-	c_data->number_of_inceptions = file_size/((2147483648)/256));
+	c_data->number_of_inceptions = file_size/((2147483647)/256);
 	c_data->inception_number = 0;
-	compress_and_store(array, c_data);
+	return c_data;
 }
 
 int main(int argc, char *argv[])
@@ -65,6 +78,7 @@ int main(int argc, char *argv[])
 	struct stat st;
 	long long file_size = 0;
 	if(stat(filename, &st) == 0)
+
 	{
 		file_size = (long long)st.st_size;
 	}else

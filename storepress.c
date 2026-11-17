@@ -19,17 +19,18 @@ typedef struct Compression_Data
 compression_data *initialize_data(FILE *fd, long long file_size)
 {
 	int i = 0;
-	int inception_number = 0;
 	compression_data *c_data = (compression_data *)malloc(sizeof(struct Compression_Data));
 	c_data->array = (int **)malloc(32*sizeof(int *));
 	c_data->fd = fd;
 	c_data->offset = 0;
 	c_data->number_of_inceptions = file_size/((2147483647)/256);
-	printf("number of inception %d\n", c_data->number_of_inceptions);
 	c_data->inception_number = 0;
-	for(int i = 31; i <= 0; i--)
+	printf("number of inceptions %lld\n", c_data->number_of_inceptions);
+	while(i < 32)
 	{
 		c_data->array[i] = (int *)malloc(sizeof(int));
+		printf("%d\n", i);
+		i++;
 	}
 	return c_data;
 }
@@ -77,8 +78,8 @@ void convert_integer_to_binary(compression_data *c_data, const int *number, cons
 
 compression_data *store_data(compression_data *c_data)
 {
-	int k = 30;
-	int i = 0;
+	int k = 0;
+	int i = 8;
 	int *mask = (int *)malloc(sizeof(int));
 	*mask = -1;
 	int *architecture = (int *)malloc(sizeof(int));
@@ -87,17 +88,27 @@ compression_data *store_data(compression_data *c_data)
 	*binary_character_storage = 8;
 	int *c = (int *)malloc(sizeof(int));
 	*c =  2147483647;
-	int *tmp = (int *)malloc(32*sizeof(int));
+	printf("2\n");
 	compression_data *data = (compression_data *)malloc(sizeof(struct Compression_Data));
-	while(k%8 >= 0)
+	while(k < 32)
 	{
-		*mask = 1;
+		*mask = -1;
+		printf("3\n");
 		convert_integer_to_binary(c_data, c_data->array[k], mask, architecture);
 		for(int j = 8-1; j >= 0; j--)
 		{
 			*c = fgetc(c_data->fd);
+			if(*c == EOF)
+			{
+				return c_data;
+			}
+			*mask = -1;
 			convert_integer_to_binary(data, c, mask, binary_character_storage);
-			c_data->array[k-7-j] = data->array[j];
+			for(int b = 8-1; b >= 0; b--)
+			{
+				printf("%d ", *data->array[b]);
+			}
+			c_data->array[k-j] = data->array[j];
 			c_data->offset = c_data->offset +1;
 			if(fseek(c_data->fd, c_data->offset, SEEK_SET) != 0)
 			{
@@ -105,10 +116,12 @@ compression_data *store_data(compression_data *c_data)
 				fclose(c_data->fd);
 				return NULL;
 			}
+			k++;
 		}
 		c_data->offset = c_data->offset +1;
-		k-8;
+		k = k +1;
 	}
+	return c_data;
 }
 
 
@@ -118,12 +131,14 @@ compression_data *compress_and_store(compression_data *c_data)
 	*mask = -1;
 	int *architecture = (int *)malloc(sizeof(int));
 	*architecture = 32;
+	printf("1\n");
 	if(c_data->inception_number != c_data->number_of_inceptions)
 	{
 		c_data->inception_number++;
+		printf("inception number = %d\n", c_data->inception_number);
 		convert_integer_to_binary(c_data, c_data->array[31], mask, architecture);
 		c_data = store_data(c_data);
-		compress_and_store(c_data);
+		return compress_and_store(c_data);
 	}else{
 		return c_data;
 
@@ -163,6 +178,7 @@ int main(int argc, char *argv[])
 	*architecture = 32;
 	int *storage = (int *)malloc(sizeof(int));
 	*storage = 2147483647;
+	printf("0\n");
 	convert_integer_to_binary(c_data, storage, mask, architecture);
 	c_data = compress_and_store(c_data);
 	return 0;

@@ -89,7 +89,7 @@ compression_data *store_data(compression_data *c_data)
 	*c =  2147483647;
 	int *tmp = (int *)malloc(32*sizeof(int));
 	compression_data *data = (compression_data *)malloc(sizeof(struct Compression_Data));
-	while(k-8 >= 0)
+	while(k%8 >= 0)
 	{
 		*mask = 1;
 		convert_integer_to_binary(c_data, c_data->array[k], mask, architecture);
@@ -97,7 +97,7 @@ compression_data *store_data(compression_data *c_data)
 		{
 			*c = fgetc(c_data->fd);
 			convert_integer_to_binary(data, c, mask, binary_character_storage);
-			c_data->array[k+j-8] = data->array[j];
+			c_data->array[k-7-j] = data->array[j];
 			c_data->offset = c_data->offset +1;
 			if(fseek(c_data->fd, c_data->offset, SEEK_SET) != 0)
 			{

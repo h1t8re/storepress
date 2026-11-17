@@ -86,25 +86,25 @@ compression_data *store_data(compression_data *c_data)
 	int *binary_character_storage = (int *)malloc(sizeof(int));
 	*binary_character_storage = 8;
 	int *c = (int *)malloc(sizeof(int));
+	*c =  2147483647;
 	int *tmp = (int *)malloc(32*sizeof(int));
 	compression_data *data = (compression_data *)malloc(sizeof(struct Compression_Data));
-	convert_integer_to_binary(c_data, c_data->array[31], mask, architecture);
-	while(k >= 0)
+	while(k-8 >= 0)
 	{
-		*mask = -1;
-		c_data->offset = c_data->offset +1;
-		*c = fgetc(c_data->fd);
 		*mask = 1;
-		convert_integer_to_binary(data, c, mask, binary_character_storage);
-		for(int j = 32, j >= 0; j--)
+		convert_integer_to_binary(c_data, c_data->array[k], mask, architecture);
+		for(int j = 8-1; j >= 0; j--)
 		{
-			printf("%d", data->array[j]);
-		}
-		if(fseek(c_data->fd, c_data->offset, SEEK_SET) != 0)
-		{
-			printf("fseek failed\n");
-			fclose(c_data->fd);
-			return NULL;
+			*c = fgetc(c_data->fd);
+			convert_integer_to_binary(data, c, mask, binary_character_storage);
+			c_data->array[k+j-8] = data->array[j];
+			c_data->offset = c_data->offset +1;
+			if(fseek(c_data->fd, c_data->offset, SEEK_SET) != 0)
+			{
+				printf("fseek failed\n");
+				fclose(c_data->fd);
+				return NULL;
+			}
 		}
 		c_data->offset = c_data->offset +1;
 		k-8;
@@ -156,13 +156,6 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 	compression_data *c_data = initialize_data(fd, file_size);
-	int *c = (int *)malloc(sizeof(int));
-	*c =  2147483647;
-	int *mask = (int *)malloc(sizeof(int));
-	*mask = -1;
-	int *architecture = (int *)malloc(sizeof(int));
-	*architecture = 32;
-	convert_integer_to_binary(c_data, c, mask, architecture);
 	c_data = compress_and_store(c_data);
 	return 0;
 }

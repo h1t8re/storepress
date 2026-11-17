@@ -25,14 +25,11 @@ compression_data *initialize_data(FILE *fd, long long file_size)
 	c_data->offset = 0;
 	c_data->number_of_inceptions = file_size/((2147483647)/256);
 	c_data->inception_number = 0;
-	printf("number of inceptions %lld\n", c_data->number_of_inceptions);
 	while(i < 32)
 	{
 		c_data->array[i] = (int *)malloc(sizeof(int));
-		printf("%d ", i);
 		i++;
 	}
-	printf("\n");
 	return c_data;
 }
 
@@ -68,30 +65,29 @@ void convert_integer_to_binary(compression_data *c_data, const int *number, cons
 {
         int *i = (int *)malloc(sizeof(int));
 	*i = 0;
-        while(*i < architecture)
+        while(*i < *architecture)
         {
                 const int *mask_shifted = shift_mask_left(mask, i);
                 const int *and_result = and_operation(number, mask_shifted);
                 c_data->array[*i] = shift_result_right(and_result, i);
                 *i = *i +1;
         }
-	printf("End of conversion\n");
 }
 
 compression_data *store_data(compression_data *c_data)
 {
+	int x = 0;
 	int k = 0;
 	int i = 8;
 	int n = 0;
 	int *mask = (int *)malloc(sizeof(int));
-	*mask = -1;
+	*mask = 1;
 	int *architecture = (int *)malloc(sizeof(int));
 	*architecture = 32;
-	int *character_storage = (int *)malloc(sizeof(int));
-	*character_storage = 8;
+	int *char_size = (int *)malloc(sizeof(int));
+	*char_size = 8;
 	int *c = (int *)malloc(sizeof(int));
 	*c =  2147483647;
-	printf("3\n");
 	compression_data *data = (compression_data *)malloc(sizeof(struct Compression_Data));
 	data->array = (int **)malloc(8*sizeof(int *));
 	while(n < 32)
@@ -101,29 +97,30 @@ compression_data *store_data(compression_data *c_data)
 	}
 	while(k < 32)
 	{
-		*mask = 1;
-		printf("4\n");
 		convert_integer_to_binary(c_data, c_data->array[k], mask, architecture);
-		for(int j = 0; j < 8; j++)
+		x = k / 8;
+		while(x < 4)
 		{
-			*c = fgetc(c_data->fd);
-			if(*c == EOF)
+			for(int j = 0; j < 8; j++)
 			{
-				return c_data;
+				*c = fgetc(c_data->fd);
+				if(*c == EOF)
+				{
+					return c_data;
+				}
+				convert_integer_to_binary(data, c, mask, char_size);
+				c_data->array[(x*8)+j] = data->array[j];
+				c_data->offset = c_data->offset +1;
+				if(fseek(c_data->fd, c_data->offset, SEEK_SET) != 0)
+				{
+					fclose(c_data->fd);
+					return c_data;
+				}
 			}
-			*mask = 1;
-			convert_integer_to_binary(data, c, mask, character_storage);
-			c_data->array[k-j] = data->array[j];
-			c_data->offset = c_data->offset +1;
-			if(fseek(c_data->fd, c_data->offset, SEEK_SET) != 0)
-			{
-				printf("fseek failed\n");
-				fclose(c_data->fd);
-				return NULL;
-			}
-			k++;
+			x = x+1;
 		}
 		k = k +1;
+		x = 0;
 	}
 	return c_data;
 }
@@ -135,13 +132,10 @@ compression_data *compress_and_store(compression_data *c_data)
 	*mask = -1;
 	int *architecture = (int *)malloc(sizeof(int));
 	*architecture = 32;
-	printf("1\n");
 	if(c_data->inception_number != c_data->number_of_inceptions)
 	{
 		c_data->inception_number++;
-		printf("inception number = %d\n", c_data->inception_number);
 		convert_integer_to_binary(c_data, c_data->array[31], mask, architecture);
-		printf("2\n");
 		c_data = store_data(c_data);
 		return compress_and_store(c_data);
 	}else{
@@ -158,7 +152,6 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	char *filename = argv[1];
-	printf("%s\n", filename);
 	FILE *fd = fopen(filename, "r");
 	if(fd == NULL)
 	{
@@ -183,9 +176,9 @@ int main(int argc, char *argv[])
 	*architecture = 32;
 	int *storage = (int *)malloc(sizeof(int));
 	*storage = 2147483647;
-	printf("0\n");
 	convert_integer_to_binary(c_data, storage, mask, architecture);
-	printf("5\n");
 	c_data = compress_and_store(c_data);
+	FILE *compressed_data_file = fopen("compressed_data.glyph", "w");
+	fprintf(compressed_data_file, "%d", *storage);
 	return 0;
 }

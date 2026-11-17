@@ -77,7 +77,7 @@ void convert_integer_to_binary(compression_data *c_data, const int *number, cons
 
 compression_data *store_data(compression_data *c_data)
 {
-	int k = 31;
+	int k = 30;
 	int i = 0;
 	int *mask = (int *)malloc(sizeof(int));
 	*mask = -1;
@@ -88,15 +88,17 @@ compression_data *store_data(compression_data *c_data)
 	int *c = (int *)malloc(sizeof(int));
 	int *tmp = (int *)malloc(32*sizeof(int));
 	compression_data *data = (compression_data *)malloc(sizeof(struct Compression_Data));
+	convert_integer_to_binary(c_data, c_data->array[31], mask, architecture);
 	while(k >= 0)
 	{
-		convert_integer_to_binary(c_data, c_data->array[30], mask, architecture);
+		*mask = -1;
 		c_data->offset = c_data->offset +1;
 		*c = fgetc(c_data->fd);
 		*mask = 1;
-		while(i < 8)
+		convert_integer_to_binary(data, c, mask, binary_character_storage);
+		for(int j = 32, j >= 0; j--)
 		{
-			convert_integer_to_binary(c_data, c, mask, binary_charracter_storage);
+			printf("%d", data->array[j]);
 		}
 		if(fseek(c_data->fd, c_data->offset, SEEK_SET) != 0)
 		{
@@ -104,11 +106,6 @@ compression_data *store_data(compression_data *c_data)
 			fclose(c_data->fd);
 			return NULL;
 		}
-		for(int i = 31; i >= 0; i--)
-		{
-			printf("%d:%d ", i, c_data->array[i]);
-		}
-		printf("\n");
 		c_data->offset = c_data->offset +1;
 		k-8;
 	}
@@ -117,16 +114,13 @@ compression_data *store_data(compression_data *c_data)
 
 compression_data *compress_and_store(compression_data *c_data)
 {
-	int k = 31;
-	int *c;
 	int *mask = (int *)malloc(sizeof(int));
 	*mask = -1;
 	int *architecture = (int *)malloc(sizeof(int));
-	*architecture = 32;
 	if(c_data->inception_number != c_data->number_of_inceptions)
 	{
 		c_data->inception_number++;
-		printf("%c ", *c);
+		convert_integer_to_binary(c_data, c_data->array[31], mask, architecture);
 		c_data = store_data(c_data);
 		compress_and_store(c_data);
 	}else{
@@ -161,7 +155,7 @@ int main(int argc, char *argv[])
 		printf("Error getting file size");
 		return 2;
 	}
-	ccompression_data *c_data = initialize_data(fd, file_size);
+	compression_data *c_data = initialize_data(fd, file_size);
 	int *c = (int *)malloc(sizeof(int));
 	*c =  2147483647;
 	int *mask = (int *)malloc(sizeof(int));

@@ -117,6 +117,7 @@ compression_data *compress_and_store(compression_data *c_data)
 	int *mask = (int *)malloc(sizeof(int));
 	*mask = -1;
 	int *architecture = (int *)malloc(sizeof(int));
+	*architecture = 32;
 	if(c_data->inception_number != c_data->number_of_inceptions)
 	{
 		c_data->inception_number++;
@@ -156,6 +157,13 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 	compression_data *c_data = initialize_data(fd, file_size);
+	int *mask = (int *)malloc(sizeof(int));
+	*mask = -1;
+	int *architecture = (int *)malloc(sizeof(int));
+	*architecture = 32;
+	int *storage = (int *)malloc(sizeof(int));
+	*storage = 2147483647;
+	convert_integer_to_binary(c_data, storage, mask, architecture);
 	c_data = compress_and_store(c_data);
 	return 0;
 }

@@ -33,6 +33,26 @@ compression_data *initialize_data(FILE *fd, long long file_size)
 	return c_data;
 }
 
+int strlen(const char *str)
+{
+        int length = 0;
+        while(*(str+(length*sizeof(char))) != '\0')
+                length++;
+        return length;
+}
+
+int strcmp(const char *str0,const char *str1)
+{
+        if(strlen(str0) != strlen(str1))
+                return 1;
+	int i = 0;
+	while((*(str0+(i*sizeof(char))) == (*(str1+(i*sizeof(char))))) & (*(str0+(i*sizeof(char))) != '\0'))
+                i++;
+        if(i == strlen(str1))
+                        return 0;
+        return 1;
+}
+
 double pow(double x, double y)
 {
 	if(y == 1)
@@ -72,6 +92,19 @@ void convert_integer_to_binary(compression_data *c_data, const int *number, cons
                 c_data->array[*i] = shift_result_right(and_result, i);
                 *i = *i +1;
         }
+}
+
+int convert_binary_to_integer(int *array, int architecture)
+{
+        int number = 0;
+        int i = architecture-1;
+        while(i >= 0)
+        {
+                if(array[i] == 1)
+                        number = number + pow(2, i+1);
+                i = i -1;
+        }
+        return number;
 }
 
 compression_data *store_data(compression_data *c_data)
@@ -144,41 +177,112 @@ compression_data *compress_and_store(compression_data *c_data)
 	}
 }
 
+void decompress_data(compression_data *c_data, int *storage_number)
+{
+	FILE *fd = fopen("data.glyph", "w");
+	compression_data *data0 = (compression_data *)malloc(sizeof(struct Compression_Data));
+	compression_data *data = (compression_data *)malloc(sizeof(struct Compression_Data));
+	int *mask = (int *)malloc(sizeof(int));
+	*mask = -1;
+	int *architecture = (int *)malloc(sizeof(int));
+	*architecture = 32;
+	int k = 30;
+	int i = 0;
+	int x = 4;
+	int *number = (int *)malloc(sizeof(int));
+	int **array = (int **)malloc(*architecture*sizeof(int *));
+	int **array1 = (int **)malloc(8*sizeof(int *));
+	int **tmp = (int **)malloc(8*sizeof(int *));
+	while(i < 32)
+	{
+		array[i] = (int *)malloc(sizeof(int));
+		i++;
+	}
+	i = 0;
+	while(i < 8)
+	{
+		array1[i] = (int *)malloc(sizeof(int));
+		i++;
+	}
+	i = 0;
+	while(i < 8)
+	{
+		tmp[i] = (int *)malloc(sizeof(int));
+		i++;
+	}
+	i = 0;
+	convert_integer_to_binary(c_data, storage_number, mask, architecture);
+	*mask = 1;
+	*number = 2147483647;
+	convert_integer_to_binary(data0, number, mask, architecture);
+	while(k >= 1)
+	{
+		*mask = -1;
+		convert_integer_to_binary(data, c_data->array[k], mask, architecture);
+		x = 0;
+		while(x <= 3)
+		{
+			for(int j = 8-1; j >= 0; j++)
+			{
+				*array1[j] = *data->array[(x*8)+j];
+			}
+			/*for(int c = 0; c < 8; c++)
+			{
+				*tmp[c] = *array1[8-c-1];
+			}*/
+			*number = convert_binary_to_integer(*array1, 8);
+			printf("%c", number);
+			fprintf(fd, "%c", *number);
+		}
+	}
+	decompress_data(data, c_data->array[31]);
+}
+
 int main(int argc, char *argv[])
 {
-	if(argc != 2)
+	if(argc != 3)
 	{
-		printf("Usage: ./storepress [file_name]\n");
+		printf("Usage: ./storepress [--compress]|[--decompress] [file_name]\n");
 		return 1;
 	}
-	char *filename = argv[1];
+	char *filename = argv[2];
 	FILE *fd = fopen(filename, "r");
 	if(fd == NULL)
 	{
 		printf("Error opening the file\n");
 		return 2;
 	}
-	struct stat st;
-	long long file_size = 0;
-	if(stat(filename, &st) == 0)
-
+	printf("%s\n", argv[2]);
+	if(strcmp(argv[1], "--compress\0") == 0)
 	{
-		file_size = (long long)st.st_size;
-	}else
+		struct stat st;
+		long long file_size = 0;
+		if(stat(filename, &st) == 0)
+		{
+			file_size = (long long)st.st_size;
+		}else
+		{
+			printf("Error getting file size");
+			return 2;
+		}
+		compression_data *c_data = initialize_data(fd, file_size);
+		int *mask = (int *)malloc(sizeof(int));
+		*mask = -1;
+		int *architecture = (int *)malloc(sizeof(int));
+		*architecture = 32;
+		int *storage = (int *)malloc(sizeof(int));
+		*storage = 2147483647;
+		convert_integer_to_binary(c_data, storage, mask, architecture);
+		c_data = compress_and_store(c_data);
+		FILE *compressed_data_file = fopen("compressed_data.glyph", "w");
+		fprintf(compressed_data_file, "%d", *storage);
+	}else if(strcmp(argv[1], "--decompress\0") == 0)
 	{
-		printf("Error getting file size");
-		return 2;
+		compression_data *c_data = initialize_data(fd, 1);
+		int *storage_number = (int *)malloc(sizeof(int));
+		fscanf(fd, "%d", storage_number);
+		decompress_data(c_data, storage_number);
+		printf("%d\n", *storage_number);
 	}
-	compression_data *c_data = initialize_data(fd, file_size);
-	int *mask = (int *)malloc(sizeof(int));
-	*mask = -1;
-	int *architecture = (int *)malloc(sizeof(int));
-	*architecture = 32;
-	int *storage = (int *)malloc(sizeof(int));
-	*storage = 2147483647;
-	convert_integer_to_binary(c_data, storage, mask, architecture);
-	c_data = compress_and_store(c_data);
-	FILE *compressed_data_file = fopen("compressed_data.glyph", "w");
-	fprintf(compressed_data_file, "%d", *storage);
 	return 0;
 }

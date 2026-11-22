@@ -1,6 +1,1 @@
-cd stdlib;
-./install;
-cd ..;
-cp -v ./stdlib/stdlib.o ./lib/stdlib.o;
-cp -v ./stdlib/stdlib.h ./include/stdlib.h;
-gcc -Wall -g ./lib/stdlib.o storepress.c -o storepress;
+gcc -Wall -g storepress.c -o storepress;

@@ -179,6 +179,6 @@ int main(int argc, char *argv[])
 	convert_integer_to_binary(c_data, storage, mask, architecture);
 	c_data = compress_and_store(c_data);
 	FILE *compressed_data_file = fopen("compressed_data.glyph", "w");
-	fprintf(compressed_data_file, "%d", *storage);
+	fprintf(compressed_data_file, "%d", *c_data->array[31]);
 	return 0;
 }

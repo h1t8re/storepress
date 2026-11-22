@@ -220,8 +220,8 @@ void decompress_data(compression_data *c_data, int *storage_number)
 	{
 		*mask = -1;
 		convert_integer_to_binary(data->array, c_data->array[k], mask, architecture);
-		x = 0;
-		while(x <= 3)
+		x = 3;
+		while(x >= 0)
 		{
 			for(int j = 8-1; j >= 0; j++)
 			{
@@ -235,11 +235,11 @@ void decompress_data(compression_data *c_data, int *storage_number)
 			*number = convert_binary_to_integer(array1, 8);
 			printf("%c", *number);
 			fprintf(fd, "%c", *number);
-			x = x +1;
+			x = x -1;
 		}
 		k = k -1;
 	}
-	decompress_data(data, c_data->array[31]);
+	decompress_data(c_data, c_data->array[31]);
 }
 
 int main(int argc, char *argv[])

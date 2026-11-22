@@ -76,8 +76,8 @@ void convert_integer_to_binary(compression_data *c_data, const int *number, cons
 
 compression_data *store_data(compression_data *c_data)
 {
-	int x = 0;
-	int k = 0;
+	int x = 4;
+	int k = 30;
 	int i = 8;
 	int n = 0;
 	int *mask = (int *)malloc(sizeof(int));
@@ -95,13 +95,13 @@ compression_data *store_data(compression_data *c_data)
 		data->array[n] = (int *)malloc(sizeof(int));
 		n++;
 	}
-	while(k < 32)
+	while(k > 0)
 	{
 		convert_integer_to_binary(c_data, c_data->array[k], mask, architecture);
 		x = k / 8;
-		while(x < 4)
+		while(x >= 0)
 		{
-			for(int j = 0; j < 8; j++)
+			for(int j = 8-1; j >= 0; j--)
 			{
 				*c = fgetc(c_data->fd);
 				if(*c == EOF)
@@ -117,10 +117,10 @@ compression_data *store_data(compression_data *c_data)
 					return c_data;
 				}
 			}
-			x = x+1;
+			x = x-1;
 		}
-		k = k +1;
-		x = 0;
+		k = k -1;
+		x = 4;
 	}
 	return c_data;
 }

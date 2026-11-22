@@ -81,7 +81,7 @@ const int *shift_result_right(const int *number, const int *i)
         return result;
 }
 
-void convert_integer_to_binary(compression_data *c_data, const int *number, const int *mask, const int *architecture)
+void convert_integer_to_binary(int **array, const int *number, const int *mask, const int *architecture)
 {
         int *i = (int *)malloc(sizeof(int));
 	*i = 0;
@@ -89,18 +89,18 @@ void convert_integer_to_binary(compression_data *c_data, const int *number, cons
         {
                 const int *mask_shifted = shift_mask_left(mask, i);
                 const int *and_result = and_operation(number, mask_shifted);
-                c_data->array[*i] = shift_result_right(and_result, i);
+                array[*i] = shift_result_right(and_result, i);
                 *i = *i +1;
         }
 }
 
-int convert_binary_to_integer(int *array, int architecture)
+int convert_binary_to_integer(int **array, int architecture)
 {
         int number = 0;
         int i = architecture-1;
         while(i >= 0)
         {
-                if(array[i] == 1)
+                if(*array[i] == 1)
                         number = number + pow(2, i+1);
                 i = i -1;
         }
@@ -130,7 +130,7 @@ compression_data *store_data(compression_data *c_data)
 	}
 	while(k > 0)
 	{
-		convert_integer_to_binary(c_data, c_data->array[k], mask, architecture);
+		convert_integer_to_binary(c_data->array, c_data->array[k], mask, architecture);
 		x = k / 8;
 		while(x >= 0)
 		{
@@ -141,7 +141,7 @@ compression_data *store_data(compression_data *c_data)
 				{
 					return c_data;
 				}
-				convert_integer_to_binary(data, c, mask, char_size);
+				convert_integer_to_binary(data->array, c, mask, char_size);
 				c_data->array[(x*8)+j] = data->array[j];
 				c_data->offset = c_data->offset +1;
 				if(fseek(c_data->fd, c_data->offset, SEEK_SET) != 0)
@@ -168,7 +168,7 @@ compression_data *compress_and_store(compression_data *c_data)
 	if(c_data->inception_number != c_data->number_of_inceptions)
 	{
 		c_data->inception_number++;
-		convert_integer_to_binary(c_data, c_data->array[31], mask, architecture);
+		convert_integer_to_binary(c_data->array, c_data->array[31], mask, architecture);
 		c_data = store_data(c_data);
 		return compress_and_store(c_data);
 	}else{
@@ -180,8 +180,8 @@ compression_data *compress_and_store(compression_data *c_data)
 void decompress_data(compression_data *c_data, int *storage_number)
 {
 	FILE *fd = fopen("data.glyph", "w");
-	compression_data *data0 = (compression_data *)malloc(sizeof(struct Compression_Data));
-	compression_data *data = (compression_data *)malloc(sizeof(struct Compression_Data));
+	compression_data *data0 = initialize_data(NULL, 1);
+	compression_data *data = initialize_data(NULL, 1);
 	int *mask = (int *)malloc(sizeof(int));
 	*mask = -1;
 	int *architecture = (int *)malloc(sizeof(int));
@@ -210,30 +210,34 @@ void decompress_data(compression_data *c_data, int *storage_number)
 		tmp[i] = (int *)malloc(sizeof(int));
 		i++;
 	}
+	printf("1\n");
 	i = 0;
-	convert_integer_to_binary(c_data, storage_number, mask, architecture);
+	convert_integer_to_binary(c_data->array, storage_number, mask, architecture);
 	*mask = 1;
 	*number = 2147483647;
-	convert_integer_to_binary(data0, number, mask, architecture);
+	convert_integer_to_binary(data0->array, number, mask, architecture);
 	while(k >= 1)
 	{
 		*mask = -1;
-		convert_integer_to_binary(data, c_data->array[k], mask, architecture);
+		convert_integer_to_binary(data->array, c_data->array[k], mask, architecture);
 		x = 0;
 		while(x <= 3)
 		{
 			for(int j = 8-1; j >= 0; j++)
 			{
-				*array1[j] = *data->array[(x*8)+j];
+				array1[j] = data->array[(x*8)+j];
+				printf("%d\n", (8*x)+j);
 			}
 			/*for(int c = 0; c < 8; c++)
 			{
 				*tmp[c] = *array1[8-c-1];
 			}*/
-			*number = convert_binary_to_integer(*array1, 8);
-			printf("%c", number);
+			*number = convert_binary_to_integer(array1, 8);
+			printf("%c", *number);
 			fprintf(fd, "%c", *number);
+			x = x +1;
 		}
+		k = k -1;
 	}
 	decompress_data(data, c_data->array[31]);
 }
@@ -272,7 +276,7 @@ int main(int argc, char *argv[])
 		*architecture = 32;
 		int *storage = (int *)malloc(sizeof(int));
 		*storage = 2147483647;
-		convert_integer_to_binary(c_data, storage, mask, architecture);
+		convert_integer_to_binary(c_data->array, storage, mask, architecture);
 		c_data = compress_and_store(c_data);
 		FILE *compressed_data_file = fopen("compressed_data.glyph", "w");
 		fprintf(compressed_data_file, "%d", *storage);
@@ -281,6 +285,7 @@ int main(int argc, char *argv[])
 		compression_data *c_data = initialize_data(fd, 1);
 		int *storage_number = (int *)malloc(sizeof(int));
 		fscanf(fd, "%d", storage_number);
+		printf("0\n");
 		decompress_data(c_data, storage_number);
 		printf("%d\n", *storage_number);
 	}

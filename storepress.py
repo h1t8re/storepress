@@ -50,13 +50,8 @@ def compress_data(file_descriptor, storage_number, array=[]):
 				k = 0
 		print(storage_array)
 	return array
+
 def main():
-	"""
-	parser = argparse.ArgumentParser(description="Compressing big data in 32 bits")
-	parser.add_argument("-c", "--compress", help="Compressing file")
-	parser.add_argument("-d", "--decompress", help="Decompressing file")
-	args = parser.parse_args()
-	"""
 	if len(sys.argv) != 3:
 		print("Usage: python3 storepress.py [--compress]|[--deconpress] [file_name]")
 		exit(1)
